@@ -80,6 +80,10 @@ pre{white-space:pre-wrap;background:#0f1e3d;color:#dbe6ff;padding:12px;border-ra
 .plant img{width:100%;height:135px;object-fit:cover;display:block}
 .plant .pn{font-weight:700;font-size:13px;padding:7px 8px 0;color:var(--navy);font-family:"Open Sans",sans-serif}
 .plant .ps{font-style:italic;font-size:11px;color:var(--muted);padding:1px 8px 8px}
+
+.rmnote{display:none;font-size:12px;color:var(--red);font-weight:600;margin:6px 0 2px}
+.rmdim .rmnote{display:block}
+.rmdim .item{opacity:.4}
 </style></head>
 <body>
 <header>
@@ -254,12 +258,12 @@ function pick(parcel){
 
   const tall = CONFIG.tallTreesAllowed(cur);
   const treeList = TREES_FRIENDLY.concat(tall?TREES_TALL:[]);
-  let treesHtml=`<div class="card sect"><h3>Trees<a class="seelink" href="#" onclick="showTab('guide');return false;">see photos</a></h3>
-     <div class="count" id="tcount"></div>` +
+  let treesHtml=`<div class="card sect" id="treesCard"><h3>Trees<a class="seelink" href="#" onclick="showTab('guide');return false;">see photos</a></h3>
+     <div class="count" id="tcount"></div><div class="rmnote">&ldquo;Rock mulch only&rdquo; is selected &mdash; click any plant below to choose plants instead.</div>` +
      treeList.map(t=>itemRow('t',t[0],t[1])).join('') +
      (tall?'':`<div class="cap">Taller shade trees (Chinese Pistache, Southern Live Oak) aren't offered here because of powerlines at this frontage.</div>`) +
      `</div>`;
-  let bushHtml=`<div class="card sect"><h3>Bushes<a class="seelink" href="#" onclick="showTab('guide');return false;">see photos</a></h3><div class="count" id="bcount"></div>`+
+  let bushHtml=`<div class="card sect" id="bushesCard"><h3>Bushes<a class="seelink" href="#" onclick="showTab('guide');return false;">see photos</a></h3><div class="count" id="bcount"></div><div class="rmnote">&ldquo;Rock mulch only&rdquo; is selected &mdash; click any plant below to choose plants instead.</div>`+
      BUSHES.map(b=>itemRow('b',b[0],b[1])).join('')+`</div>`;
   let opts=`<div class="card">
      <div class="opt"><input type="checkbox" id="noPlants" onchange="toggleNoPlants(this.checked)"><label for="noPlants">Rock mulch only — no plants for me</label></div>
@@ -305,6 +309,7 @@ function refreshCounts(){
   // disable + when maxed
   document.querySelectorAll('[id^=plus_t_]').forEach(b=>b.disabled=total('t')>=m.t);
   document.querySelectorAll('[id^=plus_b_]').forEach(b=>b.disabled=total('b')>=m.b);
+  document.querySelectorAll('#treesCard,#bushesCard').forEach(c=>c.classList.toggle('rmdim',sel.noPlants));
 }
 function toggleNoPlants(on){sel.noPlants=on; if(on){sel.trees={};sel.bushes={};
   document.querySelectorAll('.q').forEach(q=>q.textContent='0');} refreshCounts();}
