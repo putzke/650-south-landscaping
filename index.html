@@ -151,16 +151,21 @@ function parseDetail(str){
   return o;
 }
 async function loadResults(cb){
-  if(!CONFIG.SUBMIT_URL){ cb(); return; }
+  if(!CONFIG.SUBMIT_URL){ if(cb)cb(); return; }
   try{
     const r=await fetch(CONFIG.SUBMIT_URL+'?t='+Date.now());
     const rows=await r.json();
-    SUBMISSIONS=(rows||[])
-      .filter(d=> d.parcel && d.parcel!=='Parcel')          // drop any stray header row
-      .map(d=>({situs:d.situs||d.parcel, side:d.side,
+    const clean=(rows||[]).filter(d=> d.parcel && d.parcel!=='Parcel');   // drop any stray header row
+    SUBMISSIONS=clean.map(d=>({situs:d.situs||d.parcel, side:d.side,
                 trees:parseDetail(d.trees), bushes:parseDetail(d.bushes), noPlants:!!d.noPlants}));
-  }catch(e){ /* leave SUBMISSIONS as-is on network error */ }
-  cb();
+    // Rebuild persisted "completed" state from the Sheet (selections only; contact/notes stay private).
+    for(const k in DONE) delete DONE[k];
+    clean.forEach(d=>{ DONE[d.parcel]={ ts:d.ts||new Date().toISOString(),
+      sel:{trees:parseDetail(d.trees), bushes:parseDetail(d.bushes),
+           noPlants:!!d.noPlants, noIrr:!!d.noIrr, discussMore:!!d.discussMore, notes:'', contact:{}} }; });
+    refreshPicker();
+  }catch(e){ /* keep whatever we have on network error */ }
+  if(cb)cb();
 }
 function summarize(s){
   if(s.noPlants) return 'Rock mulch only (no plants).';
@@ -194,7 +199,11 @@ function refreshPicker(){
 refreshPicker();
 
 function qp(k){return new URLSearchParams(location.search).get(k);}
-window.addEventListener('load',()=>{renderDeadline(); const pc=qp('parcel'); if(pc&&byParcel[pc]){sc.value=pc; pick(pc);}});
+window.addEventListener('load', async ()=>{
+  renderDeadline();
+  await loadResults();               // pull prior submissions so completed/restore persists across sessions
+  const pc=qp('parcel'); if(pc&&byParcel[pc]){ sc.value=pc; pick(pc); }
+});
 
 function pick(parcel){
   cur=byParcel[parcel]||null; sel={trees:{},bushes:{},noPlants:false,noIrr:false,discussMore:false,notes:'',contact:{}};
