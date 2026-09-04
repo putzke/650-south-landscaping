@@ -287,7 +287,9 @@ function cssid(s){return s.replace(/[^a-z0-9]/gi,'');}
 function maxes(){return {t:CONFIG.allowance(cur.plantable,CONFIG.TREES_PER_100),b:CONFIG.allowance(cur.plantable,CONFIG.BUSHES_PER_100)};}
 function total(kind){const o=kind==='t'?sel.trees:sel.bushes;return Object.values(o).reduce((a,b)=>a+b,0);}
 function bump(kind,name,delta){
-  if(sel.noPlants)return;
+  if(delta>0 && sel.noPlants){                 // adding a plant un-checks "rock mulch only"
+    sel.noPlants=false; const cb=document.getElementById('noPlants'); if(cb)cb.checked=false;
+  }
   const store=kind==='t'?sel.trees:sel.bushes; const mx=kind==='t'?maxes().t:maxes().b;
   let v=(store[name]||0)+delta; if(v<0)v=0;
   if(delta>0 && total(kind)>=mx) return;
@@ -301,8 +303,8 @@ function refreshCounts(){
   if(tc)tc.textContent=`Trees selected: ${total('t')} / ${m.t}`;
   if(bc)bc.textContent=`Bushes selected: ${total('b')} / ${m.b}`;
   // disable + when maxed
-  document.querySelectorAll('[id^=plus_t_]').forEach(b=>b.disabled=sel.noPlants||total('t')>=m.t);
-  document.querySelectorAll('[id^=plus_b_]').forEach(b=>b.disabled=sel.noPlants||total('b')>=m.b);
+  document.querySelectorAll('[id^=plus_t_]').forEach(b=>b.disabled=total('t')>=m.t);
+  document.querySelectorAll('[id^=plus_b_]').forEach(b=>b.disabled=total('b')>=m.b);
 }
 function toggleNoPlants(on){sel.noPlants=on; if(on){sel.trees={};sel.bushes={};
   document.querySelectorAll('.q').forEach(q=>q.textContent='0');} refreshCounts();}
