@@ -190,9 +190,8 @@ function consultNote(p){
   return n.length ? '<div class="advise"><b>Note:</b> '+n.join(' ')+'</div>' : '';
 }
 function summarize(s){
-  if(s.noPlants) return 'Rock mulch only (no plants).';
-  const t=Object.entries(s.trees).map(([k,v])=>`${v} ${k}`).join(', ')||'no trees';
-  const b=Object.entries(s.bushes).map(([k,v])=>`${v} ${k}`).join(', ')||'no bushes';
+  const t=Object.entries(s.trees).map(([k,v])=>`${v} ${k}`).join(', ')||'City to select tree(s)';
+  const b=s.noPlants ? 'rock mulch only (no bushes)' : (Object.entries(s.bushes).map(([k,v])=>`${v} ${k}`).join(', ')||'no bushes');
   return `Trees: ${t}. Bushes: ${b}.`;
 }
 function renderDeadline(){
@@ -266,14 +265,14 @@ function pick(parcel){
   const tall = CONFIG.tallTreesAllowed(cur);
   const treeList = TREES_FRIENDLY.concat(tall?TREES_TALL:[]);
   let treesHtml=`<div class="card sect" id="treesCard"><h3>Trees<a class="seelink" href="#" onclick="showTab('guide');return false;">see photos</a></h3>
-     <div class="count" id="tcount"></div><div class="rmnote">&ldquo;Rock mulch only&rdquo; is selected &mdash; click any plant below to choose plants instead.</div>` +
+     <div class="count" id="tcount"></div><div class="cap" style="color:#6a5a1e;background:#fff7e0;border-radius:6px;padding:5px 8px;margin:4px 0 2px">The City will install your allotted tree(s) at no cost. If you do not choose here, the City will select the species for you.</div>` +
      treeList.map(t=>itemRow('t',t[0],t[1])).join('') +
      (tall?'':`<div class="cap">Taller shade trees (Chinese Pistache, Southern Live Oak) aren't offered here because of powerlines at this frontage.</div>`) +
      `</div>`;
-  let bushHtml=`<div class="card sect" id="bushesCard"><h3>Bushes<a class="seelink" href="#" onclick="showTab('guide');return false;">see photos</a></h3><div class="count" id="bcount"></div><div class="rmnote">&ldquo;Rock mulch only&rdquo; is selected &mdash; click any plant below to choose plants instead.</div>`+
+  let bushHtml=`<div class="card sect" id="bushesCard"><h3>Bushes<a class="seelink" href="#" onclick="showTab('guide');return false;">see photos</a></h3><div class="count" id="bcount"></div><div class="rmnote">&ldquo;Rock mulch only&rdquo; is selected &mdash; click any bush below to add bushes instead.</div>`+
      BUSHES.map(b=>itemRow('b',b[0],b[1])).join('')+`</div>`;
   let opts=`<div class="card">
-     <div class="opt"><input type="checkbox" id="noPlants" onchange="toggleNoPlants(this.checked)"><label for="noPlants">Rock mulch only — no plants for me</label></div>
+     <div class="opt"><input type="checkbox" id="noPlants" onchange="toggleNoPlants(this.checked)"><label for="noPlants">Rock mulch only — no bushes for me</label></div>
      <div class="opt"><input type="checkbox" id="noIrr" onchange="sel.noIrr=this.checked"><label for="noIrr">No City-installed irrigation</label></div>
      <label class="fld">Your name (optional)</label><input type="text" id="cname" oninput="sel.contact.name=this.value">
      <label class="fld">Phone <span style="color:var(--red)">*</span> (required)</label><input type="text" id="cphone" inputmode="tel" oninput="sel.contact.phone=this.value">
@@ -298,7 +297,7 @@ function cssid(s){return s.replace(/[^a-z0-9]/gi,'');}
 function maxes(){return {t:CONFIG.allowance(cur.plantable,CONFIG.TREES_PER_100),b:CONFIG.allowance(cur.plantable,CONFIG.BUSHES_PER_100)};}
 function total(kind){const o=kind==='t'?sel.trees:sel.bushes;return Object.values(o).reduce((a,b)=>a+b,0);}
 function bump(kind,name,delta){
-  if(delta>0 && sel.noPlants){                 // adding a plant un-checks "rock mulch only"
+  if(kind==='b' && delta>0 && sel.noPlants){   // adding a bush un-checks "rock mulch only" (trees are independent)
     sel.noPlants=false; const cb=document.getElementById('noPlants'); if(cb)cb.checked=false;
   }
   const store=kind==='t'?sel.trees:sel.bushes; const mx=kind==='t'?maxes().t:maxes().b;
@@ -315,11 +314,12 @@ function refreshCounts(){
   if(bc)bc.textContent=`Bushes selected: ${total('b')} / ${m.b}`;
   // disable + when maxed
   document.querySelectorAll('[id^=plus_t_]').forEach(b=>b.disabled=total('t')>=m.t);
-  document.querySelectorAll('[id^=plus_b_]').forEach(b=>b.disabled=total('b')>=m.b);
-  document.querySelectorAll('#treesCard,#bushesCard').forEach(c=>c.classList.toggle('rmdim',sel.noPlants));
+  document.querySelectorAll('[id^=plus_b_]').forEach(b=>b.disabled=sel.noPlants||total('b')>=m.b);
+  var _bc=document.getElementById('bushesCard'); if(_bc)_bc.classList.toggle('rmdim',sel.noPlants);
+  var _tc=document.getElementById('treesCard'); if(_tc)_tc.classList.remove('rmdim');
 }
-function toggleNoPlants(on){sel.noPlants=on; if(on){sel.trees={};sel.bushes={};
-  document.querySelectorAll('.q').forEach(q=>q.textContent='0');} refreshCounts();}
+function toggleNoPlants(on){sel.noPlants=on; if(on){sel.bushes={};
+  document.querySelectorAll('[id^="b_"]').forEach(q=>q.textContent='0');} refreshCounts();}
 
 function groupingCard(plantable){
   if(plantable==null||plantable<=0) return '';
@@ -395,8 +395,8 @@ function renderRes(){
     return;
   }
   const rows=SUBMISSIONS.map(s=>{
-    const tr=s.noPlants?'<span class="badge">Rock mulch only</span>':(Object.entries(s.trees).map(([k,v])=>`${v}× ${k}`).join(', ')||'—');
-    const bu=s.noPlants?'':(Object.entries(s.bushes).map(([k,v])=>`${v}× ${k}`).join(', ')||'—');
+    const tr=(Object.entries(s.trees).map(([k,v])=>`${v}× ${k}`).join(', ')||'<span class="badge">City to select</span>');
+    const bu=(s.noPlants?'<span class="badge">Rock mulch — no bushes</span>':(Object.entries(s.bushes).map(([k,v])=>`${v}× ${k}`).join(', ')||'—'));
     return `<tr><td>${s.situs}</td><td>${s.side}</td><td>${tr}</td><td>${bu}</td></tr>`;}).join('');
   document.getElementById('resbody').innerHTML=
     `<table><thead><tr><th>Address</th><th>Side</th><th>Trees</th><th>Bushes</th></tr></thead><tbody>${rows}</tbody></table>`;
