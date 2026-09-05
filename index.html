@@ -190,7 +190,7 @@ function consultNote(p){
   return n.length ? '<div class="advise"><b>Note:</b> '+n.join(' ')+'</div>' : '';
 }
 function summarize(s){
-  const t=Object.entries(s.trees).map(([k,v])=>`${v} ${k}`).join(', ')||'City to select tree(s)';
+  const t=Object.entries(s.trees).map(([k,v])=>`${v} ${k}`).join(', ')||'no trees';
   const b=s.noPlants ? 'rock mulch only (no bushes)' : (Object.entries(s.bushes).map(([k,v])=>`${v} ${k}`).join(', ')||'no bushes');
   return `Trees: ${t}. Bushes: ${b}.`;
 }
@@ -265,7 +265,7 @@ function pick(parcel){
   const tall = CONFIG.tallTreesAllowed(cur);
   const treeList = TREES_FRIENDLY.concat(tall?TREES_TALL:[]);
   let treesHtml=`<div class="card sect" id="treesCard"><h3>Trees<a class="seelink" href="#" onclick="showTab('guide');return false;">see photos</a></h3>
-     <div class="count" id="tcount"></div><div class="cap" style="color:#6a5a1e;background:#fff7e0;border-radius:6px;padding:5px 8px;margin:4px 0 2px">The City will install your allotted tree(s) at no cost. If you do not choose here, the City will select the species for you.</div>` +
+     <div class="count" id="tcount"></div><div class="cap" style="margin:2px 0 4px">Trees are optional — choose any you would like, up to your allowance.</div>` +
      treeList.map(t=>itemRow('t',t[0],t[1])).join('') +
      (tall?'':`<div class="cap">Taller shade trees (Chinese Pistache, Southern Live Oak) aren't offered here because of powerlines at this frontage.</div>`) +
      `</div>`;
@@ -395,7 +395,7 @@ function renderRes(){
     return;
   }
   const rows=SUBMISSIONS.map(s=>{
-    const tr=(Object.entries(s.trees).map(([k,v])=>`${v}× ${k}`).join(', ')||'<span class="badge">City to select</span>');
+    const tr=(Object.entries(s.trees).map(([k,v])=>`${v}× ${k}`).join(', ')||'—');
     const bu=(s.noPlants?'<span class="badge">Rock mulch — no bushes</span>':(Object.entries(s.bushes).map(([k,v])=>`${v}× ${k}`).join(', ')||'—'));
     return `<tr><td>${s.situs}</td><td>${s.side}</td><td>${tr}</td><td>${bu}</td></tr>`;}).join('');
   document.getElementById('resbody').innerHTML=
